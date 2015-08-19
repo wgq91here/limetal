@@ -1,0 +1,170 @@
+{% extends "web/clean_base.html" %}
+{% block yield %}
+
+<style>
+  .command_backgroud {
+    background-color: #000011;
+  }
+
+  .command_box {
+    background-color: #000011;
+    color: whitesmoke;
+    font-size: 10px;
+    word-break: break-all;
+  }
+</style>
+<script type="text/javascript" charset="utf-8">
+  webix.ready(function () {
+    //enabling CustomScroll
+    if (!webix.env.touch && webix.ui.scrollSize)
+      webix.CustomScroll.init();
+
+    command_box = {
+      template: "<form><textarea id='command_code' style='width:99%;height:99%' placeholder='Command goes here...'>help</textarea></form>",
+      id: "log_form",
+      css: "command_backgroud",
+      height: 120
+    };
+
+    webix.ui({
+      container: document.body,
+      id: "layout",
+      rows: [
+        {template: "Ladder Cloud", height: 30},
+        {
+          cols: [
+            {
+              view: "iframe", id: "frame-body", src: "/demo", minWidth: 600
+            },
+            {
+              view: "resizer"
+            },
+            {
+              rows: [
+                {
+                  id: "verse_1",
+                  width: 850,
+                  template: "<div id='command_work_area' style='height:100%'></div>",
+                  css: "command_box"
+                },
+                {
+                  view: "resizer"
+                },
+                command_box]
+            }
+          ]
+        },
+        {template: "aaa", height: 30}
+      ]
+    }).show();
+
+    var editor = CodeMirror.fromTextArea(document.getElementById("command_code"), {
+      mode: "htmlmixed",
+      lineWrapping: true,
+      matchBrackets: true,
+      theme: "3024-night",
+      autofocus: true
+    });
+
+    var cm_board = CodeMirror(document.getElementById("command_work_area"), {
+      value: "",
+      lineWrapping: true,
+      matchBrackets: true,
+      mode: "javascript",
+      theme: "3024-night"
+    });
+
+    var command_history = '';
+    LadderJS.command.input = editor;
+    LadderJS.command.history = '';
+    LadderJS.command.board = cm_board;
+    LadderJS.command.write_board = function (s, is_command) {
+      var is_c = (typeof(is_command) == "boolean") ? is_command : false;
+      var doc = LadderJS.command.board.getDoc();
+      var cursor = doc.getCursor();
+      var line = doc.getLine(cursor.line);
+      doc.replaceRange('\n' + (is_c ? '> ' : '') + s, {line: cursor.line, ch: line.length});
+      //scrollTo last
+      s = LadderJS.command.board.getScrollInfo();
+      LadderJS.command.board.scrollTo(0, s.height);
+    };
+    LadderJS.command_server_url = "http://localhost:3000/c/";
+    LadderJS.command_server_version = "0.1";
+    LadderJS.command.push = function (c) {
+      LadderJS.command.history = LadderJS.command.history + c;
+      LadderJS.command.write_board(c, true);
+      //
+      cm = c.replace(/(^\s*)|(^\n)/g, "").split(" ");
+      LadderJS.command._ajax($.trim(cm[0]), {command: c});
+      // parse
+      s = LadderJS.command._parse(LadderJS.command.last_require);
+      // write board
+      LadderJS.command.write_board(s);
+      LadderJS.command.input.getDoc().setValue("");
+      LadderJS.command.input.focus();
+    };
+    LadderJS.command.last_require = new Object();
+
+    LadderJS.command._ajax = function (c, d) {
+      var url = LadderJS.command_server_url + LadderJS.command_server_version + '/';
+      d['__anti-forgery-token'] = "{{csrf-token}}";
+      var da = null;
+      $.ajax({
+        url: url + c,
+        method: "POST",
+        data: d,
+        async: false,
+        statusCode: {
+          403: function () {
+            LadderJS.command.last_require = {message: "relogin!"};
+            alert("relogin!");
+          },
+          404: function () {
+            LadderJS.command.last_require = {message: "page not found!"};
+            alert("page not found");
+          }
+        }
+      }).fail(function () {
+        da = "server fail.";
+      }).done(function (data) {
+        LadderJS.command.last_require = data;
+      });
+      return LadderJS.command.last_require;
+    };
+
+
+    LadderJS.command.input.setOption("extraKeys", {
+      'Enter': function (cm) {
+//        var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+//        cm.replaceSelection(spaces);
+//        console.log(cm.doc.getValue());
+//        command_history = command_history + "<br/>" + "<b>&gt;</b> " + cm.doc.getValue();
+//        myCodeMirror.getDoc().setValue(command_history)
+        LadderJS.command.push(cm.doc.getValue());
+
+//        $$("verse_1").setHTML(command_history);
+//        $$('verses').showView("verse_bottom");
+//        cm.doc.setValue("");
+//        console.log($$("verse_1").getNode());
+      },
+      'Up': function (cm) {
+        console.log("UP");
+      },
+      'Down': function (cm) {
+        console.log("Down");
+      }
+    });
+
+
+//    myCodeMirror.on('beforeChange', function (cm, change) {
+//      change.cancel();
+//    });
+
+  });
+
+
+</script>
+
+
+{% endblock %}
+

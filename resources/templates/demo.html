@@ -1,0 +1,35 @@
+{% extends "clean_base.html" %}
+
+
+{% block content %}
+
+<ul>
+  <li><a href="/demo/get?id=1">Get [/demo/get?id=1]</a></li>
+  <li><a href="#" onclick="demo_post();">Post</a></li>
+  <li><a href="/demo/get">Session</a></li>
+</ul>
+
+<form action="/demo/post" method="post" enctype="multipart/form-data">
+  <input name="post_data" id="post_data"><br/>
+  <input type="file" name="post_file"><br/>
+  <input type="hidden" name="__anti-forgery-token" value="{{csrf-token}}">
+  <input type="submit" value="递交表单">
+</form>
+<div id="info">
+  {{info}}
+</div>
+
+<div>{{csrf-token}}</div>
+<script type="text/javascript">
+
+  function demo_post() {
+    $.post(
+        "/demo/post", {
+          data: $("#post_data").val(),
+          '__anti-forgery-token': "{{csrf-token}}"
+        }, function (re) {
+          $("#info").html(re.data);
+        }); //, "json"
+  }
+</script>
+{% endblock %}

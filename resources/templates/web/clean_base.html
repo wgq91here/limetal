@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <META http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>Welcome</title>
+  {% style "/code_mirror/lib/codemirror.css" %}
+  {% style "/code_mirror/theme/3024-night.css" %}
+  {% style "/webix_v2.5.0_pro/codebase/webix.css" %}
+  {% script "/js/jquery-2.1.4.min.js" %}
+  {% script "/webix_v2.5.0_pro/codebase/webix_debug.js" %}
+  <!--{% style "/Semantic-UI-2.0.7/dist/semantic.min.css" %}-->
+</head>
+<style type="text/css">
+  body {
+    background-color: #FFFFFF;
+  }
+
+  .ui.menu .item img.logo {
+    margin-right: 1.5em;
+  }
+
+  .main.container {
+    margin-top: 4em;
+  }
+</style>
+<body>
+
+{% block yield %}
+{% endblock %}
+<!-- scripts and styles -->
+
+{% script "/code_mirror/lib/codemirror.js" %}
+{% script "/code_mirror/mode/javascript/javascript.js" %}
+{% script "/js/coffee-script.js" %}
+{% script "/js/LadderJS.js" %}
+<!--{% script "/ractive-0.7.3/ractive.min.js" %}-->
+<!--{% script "/Semantic-UI-2.0.7/dist/semantic.min.js" %}-->
+
+<script type="text/javascript">
+//  var LadderJS = {
+//    command: {}
+//  };
+
+
+  //
+  var StopIteration = {toString: function() {return "StopIteration"}};
+
+  var Editor = {};
+  var indentUnit = 2;
+
+  (function () {
+
+    function normaliseString(string) {
+      var tab = "";
+      for (var i = 0; i < indentUnit; i++) tab += " ";
+
+      string = string.replace(/\t/g, tab).replace(/\u00a0/g, " ").replace(/\r\n?/g, "\n");
+      var pos = 0, parts = [], lines = string.split("\n");
+      for (var line = 0; line < lines.length; line++) {
+        if (line != 0) parts.push("\n");
+        parts.push(lines[line]);
+      }
+
+      return {
+        next: function () {
+          if (pos < parts.length) return parts[pos++];
+          else throw StopIteration;
+        }
+      };
+    }
+
+    window.highlightText = function (string, output, parser) {
+      var parser = (parser || Editor.Parser).make(stringStream(normaliseString(string)));
+      try {
+        while (true) {
+          var token = parser.next();
+          var span = document.createElement("SPAN");
+          span.className = token.style;
+          span.appendChild(document.createTextNode(token.value));
+          output.appendChild(span);
+        }
+      }
+      catch (e) {
+        if (e != StopIteration) throw e;
+      }
+    }
+
+    window.getHighlightText = function (string, parser) {
+      var parser = (parser || Editor.Parser).make(normaliseString(string));
+      var span = document.createElement("SPAN");
+      try {
+        while (true) {
+          var token = parser.next();
+          span.className = token.style;
+          span.appendChild(document.createTextNode(token.value));
+          output = span;
+        }
+      }
+      catch (e) {
+        if (e != StopIteration) throw e;
+      }
+      return output;
+    }
+  })();
+
+</script>
+</body>
+</html>
+
