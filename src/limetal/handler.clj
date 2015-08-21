@@ -3,6 +3,10 @@
             [limetal.routes.home :refer [home-routes]]
             [limetal.routes.webfront :refer [webfront-routes]]
             [limetal.routes.server :refer [server-routes]]
+            [limetal.server.page]
+            [limetal.server.componse]
+            [limetal.server.model]
+            ;
             [limetal.middleware :as middleware]
             [limetal.session :as session]
             [compojure.route :as route]
@@ -15,15 +19,15 @@
 (defonce nrepl-server (atom nil))
 
 (defroutes base-routes
-           (route/resources "/")
-           (route/not-found "Not Found"))
+  (route/resources "/")
+  (route/not-found "Not Found"))
 
 (defn parse-port [port]
   (when port
     (cond
       (string? port) (Integer/parseInt port)
       (number? port) port
-      :else          (throw (Exception. (str "invalid port value: " port))))))
+      :else (throw (Exception. (str "invalid port value: " port))))))
 
 (defn start-nrepl
   "Start a network repl for debugging when the :nrepl-port is set in the environment."
@@ -31,9 +35,9 @@
   (when-let [port (env :nrepl-port)]
     (try
       (->> port
-           (parse-port)
-           (nrepl/start-server :port)
-           (reset! nrepl-server))
+        (parse-port)
+        (nrepl/start-server :port)
+        (reset! nrepl-server))
       (timbre/info "nREPL server started on port" port)
       (catch Throwable t
         (timbre/error "failed to start nREPL" t)))))
@@ -50,7 +54,7 @@
   []
 
   (timbre/merge-config!
-    {:level     (if (env :dev) :trace :info)
+    {:level (if (env :dev) :trace :info)
      :appenders {:rotor (rotor/rotor-appender
                           {:path "limetal.log"
                            :max-size (* 512 1024)

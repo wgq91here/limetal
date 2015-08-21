@@ -74,16 +74,17 @@
       theme: "3024-night"
     });
 
-    var command_history = '';
+//    var command_history = '';
     LadderJS.command.input = editor;
     LadderJS.command.history = '';
     LadderJS.command.board = cm_board;
     LadderJS.command.write_board = function (s, is_command) {
+      LadderJS.command.board.execCommand("goDocEnd");
       var is_c = (typeof(is_command) == "boolean") ? is_command : false;
       var doc = LadderJS.command.board.getDoc();
       var cursor = doc.getCursor();
       var line = doc.getLine(cursor.line);
-      doc.replaceRange('\n' + (is_c ? '> ' : '') + s, {line: cursor.line, ch: line.length});
+      doc.replaceRange('\r\n' + (is_c ? '> ' : '') + s, {line: cursor.line, ch: line.length});
       //scrollTo last
       s = LadderJS.command.board.getScrollInfo();
       LadderJS.command.board.scrollTo(0, s.height);
@@ -91,11 +92,11 @@
     LadderJS.command_server_url = "http://localhost:3000/c/";
     LadderJS.command_server_version = "0.1";
     LadderJS.command.push = function (c) {
-      LadderJS.command.history = LadderJS.command.history + c;
+      LadderJS.command.history = LadderJS.command.history + "\r\n\r\n" + c;
       LadderJS.command.write_board(c, true);
       //
       cm = c.replace(/(^\s*)|(^\n)/g, "").split(" ");
-      LadderJS.command._ajax($.trim(cm[0]), {command: c});
+      LadderJS.command._ajax($.trim(cm[0]), {command_line: c});
       // parse
       s = LadderJS.command._parse(LadderJS.command.last_require);
       // write board

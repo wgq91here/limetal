@@ -1,7 +1,7 @@
 (ns limetal.routes.server
   (:require [limetal.layout :as layout]
-;            [limetal.server.page :as page]
-;            [limetal.server.componse :as componse]
+            ;            [limetal.server.page :as page]
+            ;            [limetal.server.componse :as componse]
             [compojure.core :refer [defroutes GET POST]]
             [ring.util.response :refer [response file-response]]
             [ring.util.http-response :refer [ok]]
@@ -13,6 +13,8 @@
 (def version "0.1")
 
 (def LADDER_COMMANDS (atom {}))
+(def HELP_COMMANDS (atom {}))
+
 ;(reset! LADDER_COMMANDS `{:create})
 ;(conj :model @LADDER_COMMANDS)
 ;(reset! LADDER_COMMANDS (conj @LADDER_COMMANDS :model))
@@ -32,23 +34,30 @@
 ;      (reset! LADDER_COMMANDS (conj @LADDER_COMMANDS {(keyword command) cm_fn}))
 ;      )))
 
-(defn command_register [command fn]
-  (let [c (keyword command)]
-    (if (not (contains? @LADDER_COMMANDS (keyword command)))
+(defn command_register [command fn & common]
+  (let [c (keyword command)
+        m (first common)
+        d (if (nil? m) "none" (str m))]
+    ;    (if (not (contains? @LADDER_COMMANDS (keyword command)))
+    (do
       (reset! LADDER_COMMANDS (conj @LADDER_COMMANDS {(keyword command) fn}))
-      )))
+      (reset! HELP_COMMANDS (conj @HELP_COMMANDS {(keyword command) d}))
+      )
+    ))
+;  )
 
 (defn answer [c j]
   (-> (merge c j)
     response
     (assoc :headers {"Content-Type" "application/json"})))
 
-(command_register :help (fn [req] {:message "help \nversion\ncreate"}))
+(command_register :help (fn [req] {:list (map #(hash-map (key %) (val %)) @HELP_COMMANDS)}) "list all commands.")
 
 (defn command_route [req]
   (let [params (:params req)
         command (str (clojure.string/lower-case (:command params)))]
     (info (str "Command -> " (:command params)))
+    (info (str "Command req -> " params))
     (let [cm (keyword command)]
       (if (contains? @LADDER_COMMANDS cm)
         (let [f (get @LADDER_COMMANDS cm)]
